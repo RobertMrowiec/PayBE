@@ -1,5 +1,6 @@
 const User = require('../../models/user')
 const Salary = require('../../models/salary')
+const Project = require('../../models/project')
 const { defaultResponse } = require('../common')
 const forEP = require('foreach-promise')
 exports.get = (req, res) => {
@@ -13,7 +14,7 @@ exports.get = (req, res) => {
     let usersArray = []
     return User.find().sort('_id').lean().exec().then(users => {
       forEP(users, user => {
-        usersArray.push(user.name)
+        usersArray.push(user.name + ' ' + user.surname)
         return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}, potentially: false}).lean().exec().then(salaries => {
           let salariesSum = 0
           if (salaries.length == 0) {
@@ -56,39 +57,81 @@ exports.get = (req, res) => {
   }
 }
 
-exports.projects = (req, res) => {
-  let userArray = []
-  let salaryArray = []
-  let allSalariesArray = []
-
-  return User.find({projects: req.params.projectId}).sort('_id').select('name').lean().exec().then(users => {
+exports.monthAgo = (req, res) => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() -1 , 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
+  let salariesArray = []
+  let potentiallySalariesArray = []
+  let usersArray = []
+  return User.find().sort('_id').lean().exec().then(users => {
     forEP(users, user => {
-      userArray.push(user.name)
-      return Salary.find({userId: user._id, projectId: req.params.projectId, potentially:false }).select('amount').lean().exec().then(salaries => {
-        if (salaries.length > 0){
-          let salarySum = 0
-          forEP(salaries, salary => {
-            salarySum += salary.amount
-          })
-          salaryArray.push({'user': user._id, 'salary': salarySum})
-         }
+      usersArray.push(user.name + ' ' + user.surname)
+      return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}, potentially: false}).lean().exec().then(salaries => {
+        let salariesSum = 0
+        if (salaries.length == 0) {
+          salariesArray.push({'user': user._id, 'salary': 0})
+        }
         else {
-          salaryArray.push({'user': user._id, 'salary': 0})
+          forEP(salaries, salary => salariesSum += salary.amount).then(() => salariesArray.push({ 'user': user._id, 'salary': salariesSum}))
         }
       }).then(() => {
-        return Salary.find({userId: user._id, projectId: req.params.projectId}).select('amount').lean().exec().then(allSalaries => {
-          if (allSalaries.length > 0){
-            let allSalarySum = 0
-            forEP(allSalaries, salary => {
-              allSalarySum += salary.amount
-            })
-            allSalariesArray.push({'user': user._id, 'salary': allSalarySum})
-           }
+        return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(allSalaries => {
+          let allSalariesSum = 0
+          if (allSalaries.length == 0) {
+            potentiallySalariesArray.push({'user': user._id, 'salary': 0})
+          }
           else {
-            allSalariesArray.push({'user': user._id, 'salary': 0})
+            forEP(allSalaries, salary => allSalariesSum += salary.amount).then(() => potentiallySalariesArray.push({ 'user': user._id, 'salary': allSalariesSum}))
           }
         })
       })
-    }).then(() => res.json({salary: salaryArray.sort((a,b) => a.user > b.user).map(x => x.salary), users: userArray, allSalaries: allSalariesArray.sort((a,b) => a.user > b.user).map(x => x.salary)}))
+    }).then(() => {
+      return res.status(200).json({
+        imiona: usersArray,
+        sumy: salariesArray.sort((a, b) => a.user > b.user).map(x => x.salary),
+        potencjalne: potentiallySalariesArray.sort((a, b) => a.user > b.user).map(x => x.salary)
+      })
+    })
+  })
+}
+
+exports.projects = (req, res) => {
+  let name
+  let userArray = []
+  let salaryArray = []
+  let allSalariesArray = []
+  return Project.findById(req.params.projectId).select('name').lean().exec().then(project => {
+    name = project.name
+    return User.find({projects: req.params.projectId}).sort('_id').select('name').lean().exec().then(users => {
+      forEP(users, user => {
+        userArray.push(user.name)
+        return Salary.find({userId: user._id, projectId: req.params.projectId, potentially:false }).populate('projectId').select('amount, projectId').lean().exec().then(salaries => {
+          if (salaries.length > 0){
+            let salarySum = 0
+            forEP(salaries, salary => {
+              salarySum += salary.amount
+            })
+            salaryArray.push({'user': user._id, 'salary': salarySum})
+           }
+          else {
+            salaryArray.push({'user': user._id, 'salary': 0})
+          }
+        }).then(() => {
+          return Salary.find({userId: user._id, projectId: req.params.projectId}).lean().exec().then(allSalaries => {
+            if (allSalaries.length > 0){
+              let allSalarySum = 0
+              forEP(allSalaries, salary => {
+                allSalarySum += salary.amount
+              })
+              allSalariesArray.push({'user': user._id, 'salary': allSalarySum})
+             }
+            else {
+              allSalariesArray.push({'user': user._id, 'salary': 0})
+            }
+          })
+        })
+      }).then(() => res.json({salary: salaryArray.sort((a,b) => a.user > b.user).map(x => x.salary), users: userArray, name: name, allSalaries: allSalariesArray.sort((a,b) => a.user > b.user).map(x => x.salary)}))
+    })
   })
 }
