@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 let SalarySchema = new Schema({
-  date: {type: Date, default: Date.now()},
+  date: {type: Date},
   amount: {type: Number, required: true},
   userId: { type: Schema.Types.ObjectId, ref: 'User'},
   potentially: { type: Boolean, default: false },

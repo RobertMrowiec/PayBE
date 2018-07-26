@@ -46,6 +46,7 @@ exports.info = defaultResponse(req => {
 })
 
 exports.add = (req, res) => {
+  req.body.date = Date.now()
   return new Salary(req.body).save().then(() => {
     if (req.body.potentially === true) {
       return Project.findById(req.body.projectId).exec().then(founded => {
@@ -57,11 +58,16 @@ exports.add = (req, res) => {
       })
     } else {
       return Project.findById(req.body.projectId).exec().then(founded => {
+        const projectName = founded.name
         const update = {
           $inc: {salaries: 1},
           $set: {howmany: founded.howmany - req.body.amount}
         }
-        return Project.findByIdAndUpdate(req.body.projectId, update, {new:true}).exec()
+        return Project.findByIdAndUpdate(req.body.projectId, update, {new:true}).exec().then(() => {
+          User.findById(req.body.userId).select('email').lean().exec().then(async user => {
+            return server.sendmail(user.email, 'Nowa wypłata', `Dodano dla Ciebie nową wypłatę w projekcie: ${projectName} w kwocie: ${req.body.amount} zł.`)
+          })
+        })
       })
     }
   }).then(() => res.status(200).json('Done'))
@@ -72,10 +78,10 @@ exports.delete = defaultResponse(req => {
     if (salary.potentially === true){
       return Project.findByIdAndUpdate(salary.projectId, {$inc: {howmanyPotentially: salary.amount}}, {new:true}).exec()
     } else {
-      return Project.findByIdAndUpdate(salary.projectId, {$inc: {howmany: salary.amount}}, {new:true}).exec()
+      return Project.findByIdAndUpdate(salary.projectId, {$inc: {howmany: salary.amount, salaries: -1}}, {new:true}).exec()
     }
   }).then(() => {
-    return Salary.findByIdAndRemove(req.params.id).exec()
+      return Salary.findByIdAndRemove(req.params.id).exec()
   })
 })
 
