@@ -27,7 +27,7 @@ app.use('/api/salaries', require('./routing/salary/route'))
 app.use('/login', require('./routing/login/route'))
 app.use('/cron', require('./routing/cron/route'))
 module.exports = (dbUrl) => {
-  return mongoose.connect(process.env.MONGODB_URI || dbUrl).then(x => {
+  return mongoose.connect(process.env.MONGODB_URI || dbUrl, {useNewUrlParser: true}).then(x => {
     return app
   })
 };
