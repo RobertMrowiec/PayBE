@@ -80,6 +80,33 @@ exports.projects = (req, res) => {
   })
 }
 
+exports.projectsActualMonth = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+  return Salary.aggregate()
+    .lookup({
+      from: 'projects',
+      localField: "projectId",
+      foreignField: "_id",
+      as: "project"
+    })
+    .match({date: {$gt: firstDay, $lt: lastDay}})
+    .group({
+      _id: "$projectId",
+      name: {$first: "$project.name"},
+      count: { $sum: 1 },
+      sum: { $sum: "$amount"}
+    }).then(salaries => {
+      return {
+        names: salaries.map(x => x.name[0]),
+        sum: salaries.map(x => x.sum),
+        count: salaries.map(x => x.count)
+      }
+    })
+})
+
 function getSpecificMonth(req, res, firstDay, lastDay) {
   let salariesArray = []
   let potentiallySalariesArray = []
