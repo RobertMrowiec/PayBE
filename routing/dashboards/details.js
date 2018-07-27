@@ -37,7 +37,7 @@ exports.twoMonthsAgo = (req, res) => {
   let firstDay = new Date(date.getFullYear(), date.getMonth() -2 , 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth() -1, 0);
 
-  return getSpecificMonth(firstDay, lastDay)
+  return getSpecificMonth(req, res, firstDay, lastDay)
 }
 
 exports.projects = (req, res) => {
