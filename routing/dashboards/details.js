@@ -45,7 +45,7 @@ exports.get = (req, res) => {
   }
   else {
      return Salary.find({userId: req.session.user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(salaries => {
-       sum = 0
+       sum = 0 
        if (salaries.length > 0) {
          forEP(salaries, salary => sum += (salary.amount))
          return res.status(200).json({sum: sum})
