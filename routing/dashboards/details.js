@@ -13,7 +13,7 @@ exports.get = (req, res) => {
   }
   else {
      return Salary.find({userId: req.session.user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(salaries => {
-       sum = 0 
+       sum = 0
        if (salaries.length > 0) {
          forEP(salaries, salary => sum += (salary.amount))
          return res.status(200).json({sum: sum})
@@ -32,7 +32,7 @@ exports.monthAgo = (req, res) => {
   return getSpecificMonth(req, res, firstDay, lastDay)
 }
 
-exports.twoMonthAgo = (req, res) => {
+exports.twoMonthsAgo = (req, res) => {
   let date = new Date();
   let firstDay = new Date(date.getFullYear(), date.getMonth() -2 , 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth() -1, 0);
