@@ -29,84 +29,16 @@ exports.monthAgo = (req, res) => {
   let date = new Date();
   let firstDay = new Date(date.getFullYear(), date.getMonth() -1 , 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
-  let salariesArray = []
-  let potentiallySalariesArray = []
-  let usersArray = []
-  return User.find().sort('_id').lean().exec().then(users => {
-    forEP(users, user => {
-      usersArray.push(user.name + ' ' + user.surname)
-      return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}, potentially: false}).lean().exec().then(salaries => {
-        let salariesSum = 0
-        if (salaries.length == 0) {
-          salariesArray.push({'user': user._id, 'salary': 0})
-        }
-        else {
-          forEP(salaries, salary => salariesSum += salary.amount).then(() => salariesArray.push({ 'user': user._id, 'salary': salariesSum}))
-        }
-      }).then(() => {
-        return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(allSalaries => {
-          let allSalariesSum = 0
-          if (allSalaries.length == 0) {
-            potentiallySalariesArray.push({'user': user._id, 'salary': 0})
-          }
-          else {
-            forEP(allSalaries, salary => allSalariesSum += salary.amount).then(() => potentiallySalariesArray.push({ 'user': user._id, 'salary': allSalariesSum}))
-          }
-        })
-      })
-    }).then(() => {
-      return res.status(200).json({
-        imiona: usersArray,
-        sumy: salariesArray.sort((a, b) => a.user > b.user).map(x => x.salary),
-        potencjalne: potentiallySalariesArray.sort((a, b) => a.user > b.user).map(x => x.salary)
-      })
-    })
-  })
+  return getSpecificMonth(req, res, firstDay, lastDay)
 }
 
-function getSpecificMonth(req, res, firstDay, lastDay) {
-  let salariesArray = []
-  let potentiallySalariesArray = []
-  let usersArray = []
-  return User.find().sort('_id').lean().exec().then(users => {
-    forEP(users, user => {
-      usersArray.push(user.name + ' ' + user.surname)
-      return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}, potentially: false}).lean().exec().then(salaries => {
-        let salariesSum = 0
-        if (salaries.length == 0) {
-          salariesArray.push({'user': user._id, 'salary': 0})
-        }
-        else {
-          forEP(salaries, salary => salariesSum += salary.amount).then(() => salariesArray.push({ 'user': user._id, 'salary': salariesSum}))
-        }
-      }).then(() => {
-        return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(allSalaries => {
-          let allSalariesSum = 0
-          if (allSalaries.length == 0) {
-            potentiallySalariesArray.push({'user': user._id, 'salary': 0})
-          }
-          else {
-            forEP(allSalaries, salary => allSalariesSum += salary.amount).then(() => potentiallySalariesArray.push({ 'user': user._id, 'salary': allSalariesSum}))
-          }
-        })
-      })
-    }).then(() => {
-      return res.status(200).json({
-        imiona: usersArray,
-        sumy: salariesArray.sort((a, b) => a.user > b.user).map(x => x.salary),
-        potencjalne: potentiallySalariesArray.sort((a, b) => a.user > b.user).map(x => x.salary)
-      })
-    })
-  })
-}
+exports.twoMonthAgo = (req, res) => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() -2 , 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() -1, 0);
 
-// exports.monthAgo = (req, res) => {
-//   let date = new Date();
-//   let firstDay = new Date(date.getFullYear(), date.getMonth() -2 , 1);
-//   let lastDay = new Date(date.getFullYear(), date.getMonth() -1, 0);
-//
-//   return getSpecificMonth(firstDay, lastDay)
-// }
+  return getSpecificMonth(firstDay, lastDay)
+}
 
 exports.projects = (req, res) => {
   let name
@@ -144,6 +76,42 @@ exports.projects = (req, res) => {
           })
         })
       }).then(() => res.json({salary: salaryArray.sort((a,b) => a.user > b.user).map(x => x.salary), users: userArray, name: name, allSalaries: allSalariesArray.sort((a,b) => a.user > b.user).map(x => x.salary)}))
+    })
+  })
+}
+
+function getSpecificMonth(req, res, firstDay, lastDay) {
+  let salariesArray = []
+  let potentiallySalariesArray = []
+  let usersArray = []
+  return User.find().sort('_id').lean().exec().then(users => {
+    forEP(users, user => {
+      usersArray.push(user.name + ' ' + user.surname)
+      return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}, potentially: false}).lean().exec().then(salaries => {
+        let salariesSum = 0
+        if (salaries.length == 0) {
+          salariesArray.push({'user': user._id, 'salary': 0})
+        }
+        else {
+          forEP(salaries, salary => salariesSum += salary.amount).then(() => salariesArray.push({ 'user': user._id, 'salary': salariesSum}))
+        }
+      }).then(() => {
+        return Salary.find({userId: user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(allSalaries => {
+          let allSalariesSum = 0
+          if (allSalaries.length == 0) {
+            potentiallySalariesArray.push({'user': user._id, 'salary': 0})
+          }
+          else {
+            forEP(allSalaries, salary => allSalariesSum += salary.amount).then(() => potentiallySalariesArray.push({ 'user': user._id, 'salary': allSalariesSum}))
+          }
+        })
+      })
+    }).then(() => {
+      return res.status(200).json({
+        imiona: usersArray,
+        sumy: salariesArray.sort((a, b) => a.user > b.user).map(x => x.salary),
+        potencjalne: potentiallySalariesArray.sort((a, b) => a.user > b.user).map(x => x.salary)
+      })
     })
   })
 }
