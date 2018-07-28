@@ -9,7 +9,7 @@ exports.get = (req, res) => {
   let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
   if (req.session.user.isAdmin && req.session.user.isAdmin == true){
-    return getSpecificMonth(req, res, firstDay, lastDay)
+    return getAllBySpecificMonth(req, res, firstDay, lastDay)
   }
   else {
      return Salary.find({userId: req.session.user._id, date: {$gt: firstDay, $lt: lastDay}}).lean().exec().then(salaries => {
@@ -29,7 +29,7 @@ exports.monthAgo = (req, res) => {
   let date = new Date();
   let firstDay = new Date(date.getFullYear(), date.getMonth() -1 , 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
-  return getSpecificMonth(req, res, firstDay, lastDay)
+  return getAllBySpecificMonth(req, res, firstDay, lastDay)
 }
 
 exports.twoMonthsAgo = (req, res) => {
@@ -37,7 +37,7 @@ exports.twoMonthsAgo = (req, res) => {
   let firstDay = new Date(date.getFullYear(), date.getMonth() -2 , 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth() -1, 0);
 
-  return getSpecificMonth(req, res, firstDay, lastDay)
+  return getAllBySpecificMonth(req, res, firstDay, lastDay)
 }
 
 exports.projects = (req, res) => {
@@ -85,6 +85,26 @@ exports.projectsActualMonth = defaultResponse(req => {
   let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
+  return getProjectBySpecificMonth(firstDay, lastDay)
+})
+
+exports.projectsMonthAgo = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
+
+  return getProjectBySpecificMonth(firstDay, lastDay)
+})
+
+exports.projectsTwoMonthsAgo = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() - 2, 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() - 1, 0);
+
+  return getProjectBySpecificMonth(firstDay, lastDay)
+})
+
+function getProjectBySpecificMonth(firstDay, lastDay) {
   return Salary.aggregate()
     .lookup({
       from: 'projects',
@@ -98,16 +118,9 @@ exports.projectsActualMonth = defaultResponse(req => {
       name: {$first: "$project.name"},
       count: { $sum: 1 },
       sum: { $sum: "$amount"}
-    }).then(salaries => {
-      return {
-        names: salaries.map(x => x.name[0]),
-        sum: salaries.map(x => x.sum),
-        count: salaries.map(x => x.count)
-      }
     })
-})
-
-function getSpecificMonth(req, res, firstDay, lastDay) {
+}
+function getAllBySpecificMonth(req, res, firstDay, lastDay) {
   let salariesArray = []
   let potentiallySalariesArray = []
   let usersArray = []

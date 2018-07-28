@@ -3,9 +3,11 @@ const router = express.Router()
 const dashboard = require('./details')
 
 router.get('/salaries', dashboard.get)
-      .get('/salaries/monthAgo', dashboard.monthAgo)
-      .get('/salaries/twoMonthsAgo', dashboard.twoMonthsAgo)
+      .get('/salaries/months/one', dashboard.monthAgo)
+      .get('/salaries/months/two', dashboard.twoMonthsAgo)
       .get('/projects', dashboard.projectsActualMonth)
-      .get('/projects/:projectId', dashboard.projects)
+      .get('/projects/months/one', dashboard.projectsMonthAgo)
+      .get('/projects/months/two', dashboard.projectsTwoMonthsAgo)
+      .get('/projects/:projectId', dashboard.projects);
 
-module.exports = router
+module.exports = router;
