@@ -146,14 +146,7 @@ function getProjectBySpecificMonth(firstDay, lastDay) {
 }
 
 function getSalaryBySpecificMonthPotentially(firstDay, lastDay) {
-  return Salary.aggregate()
-    .lookup({
-      from: 'projects',
-      localField: "projectId",
-      foreignField: "_id",
-      as: "project"
-    })
-    .match({date: {$gt: firstDay, $lt: lastDay}, potentially: true})
+  return Salary.find({date: {$gt: firstDay, $lt: lastDay}, potentially: true}).populate('projectId').lean().exec()
 }
 
 function getAllBySpecificMonth(req, res, firstDay, lastDay) {
