@@ -128,8 +128,34 @@ exports.salariesTwoMonthsAgoPotentially = defaultResponse(req => {
   return getSalaryBySpecificMonthPotentially(firstDay, lastDay)
 })
 
+exports.person = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+  return getSalaryBySpecificMonthAndPerson(firstDay, lastDay)
+})
+
+exports.personMonthAgo = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
+
+  return getSalaryBySpecificMonthAndPerson(firstDay, lastDay)
+})
+
+exports.personTwoMonthsAgo = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() - 2, 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() - 1, 0);
+
+  return getSalaryBySpecificMonthAndPerson(firstDay, lastDay)
+})
+
 function getProjectBySpecificMonth(firstDay, lastDay) {
-  return Salary.aggregate()
+  return Salary.aggregate([
+     { $sort : { name : 1 } }
+   ])
     .lookup({
       from: 'projects',
       localField: "projectId",
@@ -139,14 +165,38 @@ function getProjectBySpecificMonth(firstDay, lastDay) {
     .match({date: {$gt: firstDay, $lt: lastDay}})
     .group({
       _id: "$projectId",
-      name: {$first: "$project.name"},
+      name: { $first: "$project.name"},
       count: { $sum: 1 },
       sum: { $sum: "$amount"}
+    }).exec().then(x => x.sort((a,b) => a.name[0] > b.name[0]))
+}
+
+function getSalaryBySpecificMonthAndPerson(firstDay, lastDay) {
+  return Salary.aggregate()
+    .lookup({
+      from: 'projects',
+      localField: "projectId",
+      foreignField: "_id",
+      as: "project"
     })
+    .lookup({
+      from: 'users',
+      localField: "userId",
+      foreignField: "_id",
+      as: "user"
+    })
+    .match({date: {$gt: firstDay, $lt: lastDay}})
+    .group({
+      _id: "$userId",
+      name: {$first: "$user.name"},
+      surname: {$first: "$user.surname"},
+      count: { $sum: 1 },
+      sum: { $sum: "$amount"}
+    }).then(x => x.sort((a,b) => a.name[0] > b.name[0]))
 }
 
 function getSalaryBySpecificMonthPotentially(firstDay, lastDay) {
-  return Salary.find({date: {$gt: firstDay, $lt: lastDay}, potentially: true}).populate('projectId').populate('userId').lean().exec()
+  return Salary.find({date: {$gt: firstDay, $lt: lastDay}, potentially: true}).populate('projectId').populate('userId').sort('name').lean().exec()
 }
 
 function getAllBySpecificMonth(req, res, firstDay, lastDay) {
