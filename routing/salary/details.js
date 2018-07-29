@@ -1,9 +1,10 @@
 const Salary = require('../../models/salary')
 const Project = require('../../models/project')
 const User = require('../../models/user')
-const { defaultResponse } = require('../common')
+const { defaultResponse, multiFilter } = require('../common')
 const moment = require('moment')
 const server = require('../../emails/email')
+
 
 exports.get = defaultResponse(async req => {
   if (req.session.user.isAdmin == true) return {
@@ -17,6 +18,10 @@ exports.get = defaultResponse(async req => {
     logged: req.session.user
   }
 })
+
+exports.filter = defaultResponse(req => Salary.find(multiFilter(req.body)).populate('projectId').populate('userId').sort('-date').lean().exec())
+
+exports.potentially = defaultResponse(req => Salary.find({potentially: true}).populate('projectId').populate('userId').sort('-date').lean().exec())
 
 exports.projectId = defaultResponse(req => Salary.find({projectId: req.params.projectId}).populate('projectId').populate('userId').sort('-date').lean().exec().then(salaries => { return {salaries: salaries, logged: req.session.user}}));
 
