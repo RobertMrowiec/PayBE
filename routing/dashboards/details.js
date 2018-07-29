@@ -104,28 +104,28 @@ exports.projectsTwoMonthsAgo = defaultResponse(req => {
   return getProjectBySpecificMonth(firstDay, lastDay)
 })
 
-exports.projectsActualMonthPotentially = defaultResponse(req => {
+exports.salariesActualMonthPotentially = defaultResponse(req => {
   let date = new Date();
   let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
-  return getProjectBySpecificMonth(firstDay, lastDay)
+  return getSalaryBySpecificMonthPotentially(firstDay, lastDay)
 })
 
-exports.projectsMonthAgoPotentially = defaultResponse(req => {
+exports.salariesMonthAgoPotentially = defaultResponse(req => {
   let date = new Date();
   let firstDay = new Date(date.getFullYear(), date.getMonth() - 1, 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
 
-  return getProjectBySpecificMonth(firstDay, lastDay)
+  return getSalaryBySpecificMonthPotentially(firstDay, lastDay)
 })
 
-exports.projectsTwoMonthsAgoPotentially = defaultResponse(req => {
+exports.salariesTwoMonthsAgoPotentially = defaultResponse(req => {
   let date = new Date();
   let firstDay = new Date(date.getFullYear(), date.getMonth() - 2, 1);
   let lastDay = new Date(date.getFullYear(), date.getMonth() - 1, 0);
 
-  return getProjectBySpecificMonth(firstDay, lastDay)
+  return getSalaryBySpecificMonthPotentially(firstDay, lastDay)
 })
 
 function getProjectBySpecificMonth(firstDay, lastDay) {
@@ -145,7 +145,7 @@ function getProjectBySpecificMonth(firstDay, lastDay) {
     })
 }
 
-function getProjectBySpecificMonthPotentially(firstDay, lastDay) {
+function getSalaryBySpecificMonthPotentially(firstDay, lastDay) {
   return Salary.aggregate()
     .lookup({
       from: 'projects',
@@ -154,12 +154,6 @@ function getProjectBySpecificMonthPotentially(firstDay, lastDay) {
       as: "project"
     })
     .match({date: {$gt: firstDay, $lt: lastDay}, potentially: true})
-    .group({
-      _id: "$projectId",
-      name: {$first: "$project.name"},
-      count: { $sum: 1 },
-      sum: { $sum: "$amount"}
-    })
 }
 
 function getAllBySpecificMonth(req, res, firstDay, lastDay) {
