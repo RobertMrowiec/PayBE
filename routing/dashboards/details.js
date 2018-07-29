@@ -104,6 +104,30 @@ exports.projectsTwoMonthsAgo = defaultResponse(req => {
   return getProjectBySpecificMonth(firstDay, lastDay)
 })
 
+exports.projectsActualMonthPotentially = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+  return getProjectBySpecificMonth(firstDay, lastDay)
+})
+
+exports.projectsMonthAgoPotentially = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
+
+  return getProjectBySpecificMonth(firstDay, lastDay)
+})
+
+exports.projectsTwoMonthsAgoPotentially = defaultResponse(req => {
+  let date = new Date();
+  let firstDay = new Date(date.getFullYear(), date.getMonth() - 2, 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() - 1, 0);
+
+  return getProjectBySpecificMonth(firstDay, lastDay)
+})
+
 function getProjectBySpecificMonth(firstDay, lastDay) {
   return Salary.aggregate()
     .lookup({
@@ -120,6 +144,24 @@ function getProjectBySpecificMonth(firstDay, lastDay) {
       sum: { $sum: "$amount"}
     })
 }
+
+function getProjectBySpecificMonthPotentially(firstDay, lastDay) {
+  return Salary.aggregate()
+    .lookup({
+      from: 'projects',
+      localField: "projectId",
+      foreignField: "_id",
+      as: "project"
+    })
+    .match({date: {$gt: firstDay, $lt: lastDay}, potentially: true})
+    .group({
+      _id: "$projectId",
+      name: {$first: "$project.name"},
+      count: { $sum: 1 },
+      sum: { $sum: "$amount"}
+    })
+}
+
 function getAllBySpecificMonth(req, res, firstDay, lastDay) {
   let salariesArray = []
   let potentiallySalariesArray = []

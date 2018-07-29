@@ -8,6 +8,9 @@ router.get('/salaries', dashboard.get)
       .get('/projects', dashboard.projectsActualMonth)
       .get('/projects/months/one', dashboard.projectsMonthAgo)
       .get('/projects/months/two', dashboard.projectsTwoMonthsAgo)
+      .get('/projects/potentially', dashboard.projectsActualMonth)
+      .get('/projects/potentially/months/one', dashboard.projectsMonthAgo)
+      .get('/projects/potentially/months/two', dashboard.projectsTwoMonthsAgo)
       .get('/projects/:projectId', dashboard.projects);
 
 module.exports = router;
