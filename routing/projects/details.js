@@ -29,6 +29,8 @@ exports.get = defaultResponse(async req => {
   })
 })
 
+exports.all = defaultResponse(req => Project.find().lean().exec())
+
 exports.user = defaultResponse(req => Project.find({users: req.params.userId}).lean().exec())
 
 exports.info = defaultResponse(req => {

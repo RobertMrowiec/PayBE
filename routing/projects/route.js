@@ -4,6 +4,7 @@ const project = require('./details')
 
 router
     .get('/', project.get)
+    .get('/projects/all', project.all)
     .get('/:id', project.info)
     .get('/:userId', project.user)
     .post('/', project.add)
